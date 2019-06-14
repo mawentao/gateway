@@ -22,11 +22,8 @@ function cpfiles()
 }
 
 # 拷贝文件
-cp -r $target/*.jar $outdir
-cp -r profile/online/* $outdir
-
-cp -r src/main/resources/dist/start.sh $outdir
-
-
+cpfiles $target/*.jar
+cpfiles profile/online/*
+cpfiles control.sh
 
 echo "!!!BUILD SUCCESS!!!"
