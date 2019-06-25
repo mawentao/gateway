@@ -111,8 +111,8 @@ public class ApiConfig {
 				Api api = Api.createByGwApi(gwApi);
 				//2.3 添加到idlemap
 				idlemap.put(api.getApi(), api);
-//				System.err.println(gwApi);
-//				System.err.println(api);
+				//System.err.println(gwApi);
+				System.err.println(api);
 				logger.debug(api.toString());
 			}
 		}

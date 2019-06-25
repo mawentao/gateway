@@ -23,6 +23,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.gateway.pojo.Api;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,28 +35,35 @@ import org.springframework.stereotype.Service;
 public class HttpForward implements IForward {
 
 	@Override
-	public Object forward(HttpServletRequest request, String url) throws Exception {
+	public Object forward(HttpServletRequest request, Api api) throws Exception {
 		Object res = null;
-//		url = "http://localhost:8888/discuz/source/plugin/aaa/index.php?version=4&module=dict&action=getOptions";
+		String url = api.getUri();
 		HttpClient client = HttpClients.createDefault();
+        HttpUriRequest req;
         HttpResponse response;
+        
+        //1. 设置请求和传输超时时间
+        RequestConfig.Builder builder = RequestConfig.custom();
+		if (api.getTimeout()>0) {
+			int timeout = api.getTimeout();
+			builder.setConnectionRequestTimeout(timeout)
+					.setConnectTimeout(timeout)
+					.setSocketTimeout(timeout);
+		}
+		RequestConfig requestConfig = builder.build();
 		
-        // 设置请求和传输超时时间
-		RequestConfig requestConfig = RequestConfig.custom()
-										.setConnectionRequestTimeout(1000)
-										.setConnectTimeout(1000)
-										.setSocketTimeout(1000).build();
-			HttpUriRequest req;
-			String contentType = request.getContentType();
-			if (contentType==null) {
-				req = toHttpGet(url, request, requestConfig);
-			} else {
-				req = toHttpPost(url, request, requestConfig);
-			}
-			if (req==null) {
-				throw new Exception("cannot forward "+contentType);
-			}
-
+		//2. 构建Http请求
+		String contentType = request.getContentType();
+		if (contentType==null) {
+			req = toHttpGet(url, request, requestConfig);
+		} else {
+			req = toHttpPost(url, request, requestConfig);
+		}
+		if (req==null) {
+			throw new Exception("cannot forward "+contentType);
+		}
+		
+		//3. 附加在Header中的字段
 		Enumeration<String> attrbutes = request.getAttributeNames();
 		while (attrbutes.hasMoreElements()) {
 			String attr = attrbutes.nextElement();
@@ -65,19 +73,14 @@ public class HttpForward implements IForward {
 				System.err.println(attr+":"+attrValue);
 			}
 		}
-			
-			//
-			
-			//req.setConfig(requestConfig);
-			
-			
-			response = client.execute(req);
-			int resStatusCode = response.getStatusLine().getStatusCode();
-			if (resStatusCode!=200) {
-				throw new Exception("Http State: "+resStatusCode);
-			}
-			res = EntityUtils.toString(response.getEntity());
 		
+		//4. 发送http请求，处理返回 
+		response = client.execute(req);
+		int resStatusCode = response.getStatusLine().getStatusCode();
+		if (resStatusCode!=200) {
+			throw new Exception("Http State: "+resStatusCode);
+		}
+		res = EntityUtils.toString(response.getEntity());
 		return res;
 	}
 	
@@ -127,8 +130,6 @@ public class HttpForward implements IForward {
 	 * 处理post请求 form数据 填充form数据
 	 *
 	 * @param request 前台请求
-	 * @author piper
-	 * @data 2018/7/17 18:05
 	 */
 	public UrlEncodedFormEntity formData(HttpServletRequest request) {
 	    UrlEncodedFormEntity urlEncodedFormEntity = null;
@@ -151,8 +152,6 @@ public class HttpForward implements IForward {
 	 * 处理post请求 json数据
 	 *
 	 * @param request 前台请求
-	 * @author piper
-	 * @data 2018/7/17 18:05
 	 */
 	public StringEntity jsonData(HttpServletRequest request) {
 	    InputStreamReader is = null;

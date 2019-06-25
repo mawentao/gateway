@@ -54,7 +54,7 @@ public class GwController extends BaseController {
 			}
 			//4. HTTP代理转发
 			logger.debug(api.getApi()+"->"+api.getUri());
-			res = httpForward.forward(request,api.getUri());
+			res = httpForward.forward(request,api);
 		} catch (Exception e) {
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			res = responseError(stopwatch,100500, e.getMessage());
